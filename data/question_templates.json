@@ -1,0 +1,24 @@
+{
+  "personality_questions": [
+    {
+      "id": 1,
+      "question": "Describe a time when you felt truly happy. What were you doing?"
+    },
+    {
+      "id": 2,
+      "question": "What is your biggest fear, and how do you cope with it?"
+    },
+    {
+      "id": 3,
+      "question": "If you could change one thing about your life, what would it be?"
+    },
+    {
+      "id": 4,
+      "question": "What qualities do you value most in your friends?"
+    },
+    {
+      "id": 5,
+      "question": "How do you handle stress or pressure in your life?"
+    }
+  ]
+}

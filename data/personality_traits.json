@@ -1,0 +1,84 @@
+{
+  "trait_patterns": {
+    "openness": {
+      "high_indicators": [
+        "creative",
+        "curious",
+        "imaginative",
+        "adventurous",
+        "open-minded"
+      ],
+      "low_indicators": [
+        "conventional",
+        "cautious",
+        "reserved",
+        "predictable",
+        "routine-oriented"
+      ]
+    },
+    "conscientiousness": {
+      "high_indicators": [
+        "organized",
+        "dependable",
+        "disciplined",
+        "goal-oriented",
+        "thorough"
+      ],
+      "low_indicators": [
+        "careless",
+        "impulsive",
+        "disorganized",
+        "unreliable",
+        "spontaneous"
+      ]
+    },
+    "extraversion": {
+      "high_indicators": [
+        "sociable",
+        "energetic",
+        "talkative",
+        "assertive",
+        "enthusiastic"
+      ],
+      "low_indicators": [
+        "reserved",
+        "quiet",
+        "introverted",
+        "shy",
+        "withdrawn"
+      ]
+    },
+    "agreeableness": {
+      "high_indicators": [
+        "compassionate",
+        "cooperative",
+        "trusting",
+        "empathetic",
+        "kind"
+      ],
+      "low_indicators": [
+        "competitive",
+        "critical",
+        "uncooperative",
+        "suspicious",
+        "selfish"
+      ]
+    },
+    "neuroticism": {
+      "high_indicators": [
+        "anxious",
+        "moody",
+        "sensitive",
+        "irritable",
+        "self-conscious"
+      ],
+      "low_indicators": [
+        "calm",
+        "stable",
+        "resilient",
+        "confident",
+        "secure"
+      ]
+    }
+  }
+}
