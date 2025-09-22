@@ -1,3 +1,9 @@
+import json
+import requests
+from typing import Dict, List, Any
+import numpy as np
+from datetime import datetime
+
 class PersonalityAnalyzer:
     """
     Analyze personality traits using local LLAMA model
@@ -29,19 +35,29 @@ class PersonalityAnalyzer:
         """Load detailed trait descriptions for LLAMA context"""
         return {
             "openness": """
-            Openness reflects the degree of intellectual curiosity, creativity, and a preference for novelty and variety.
+            Openness to Experience: Reflects degree of intellectual curiosity, creativity, 
+            and preference for novelty. High: creative, imaginative, curious, artistic, 
+            values variety. Low: practical, conventional, prefers routine, traditional.
             """,
             "conscientiousness": """
-            Conscientiousness denotes a person's degree of self-discipline, act dutifully, and aim for achievement.
+            Conscientiousness: Reflects tendency to be organized, responsible, and 
+            self-disciplined. High: organized, disciplined, careful, thorough, reliable. 
+            Low: spontaneous, flexible, disorganized, casual, careless.
             """,
             "extraversion": """
-            Extraversion is characterized by sociability, talkativeness, assertiveness, and high amounts of emotional expressiveness.
+            Extraversion: Reflects energy direction and social behavior. High: outgoing, 
+            energetic, talkative, assertive, seeks social stimulation. Low: reserved, 
+            quiet, independent, prefers solitude, thoughtful.
             """,
             "agreeableness": """
-            Agreeableness reflects individual differences in general concern for social harmony.
+            Agreeableness: Reflects interpersonal orientation. High: trusting, helpful, 
+            forgiving, straightforward, compassionate. Low: skeptical, competitive, 
+            challenging, self-interested, critical.
             """,
             "neuroticism": """
-            Neuroticism refers to the tendency to experience negative emotions, such as anxiety, anger, or depression.
+            Neuroticism: Reflects emotional stability. High: anxious, moody, worrying, 
+            sensitive to stress, emotionally reactive. Low: calm, relaxed, secure, 
+            hardy, emotionally stable.
             """
         }
     
@@ -59,11 +75,20 @@ class PersonalityAnalyzer:
         payload = {
             "model": self.model_name,
             "prompt": prompt,
-            "temperature": temperature
+            "stream": False,
+            "keep_alive": "5m",  # Keep the model in memory for 5 minutes
+            "options": {
+                "temperature": temperature,
+                "num_predict": 500,
+                "top_p": 0.9
+            }
         }
         
         try:
-            response = requests.post(self.llama_endpoint, json=payload, timeout=60)
+            # Increase timeout to allow for model loading on first run
+            response = requests.post(self.llama_endpoint, json=payload, timeout=180)
+            response.raise_for_status()
+            
             result = response.json()
             return result.get("response", "").strip()
             
@@ -164,23 +189,40 @@ OVERALL PERSONALITY TYPE: [2-3 sentence summary]
         
         for line in lines:
             line = line.strip()
-            if line.startswith("OPENNESS:"):
-                scores['openness'] = float(line.split(":")[1].split("-")[0].strip())
-                explanations['openness'] = line.split("-")[1].strip()
-            elif line.startswith("CONSCIENTIOUSNESS:"):
-                scores['conscientiousness'] = float(line.split(":")[1].split("-")[0].strip())
-                explanations['conscientiousness'] = line.split("-")[1].strip()
-            elif line.startswith("EXTRAVERSION:"):
-                scores['extraversion'] = float(line.split(":")[1].split("-")[0].strip())
-                explanations['extraversion'] = line.split("-")[1].strip()
-            elif line.startswith("AGREEABLENESS:"):
-                scores['agreeableness'] = float(line.split(":")[1].split("-")[0].strip())
-                explanations['agreeableness'] = line.split("-")[1].strip()
-            elif line.startswith("NEUROTICISM:"):
-                scores['neuroticism'] = float(line.split(":")[1].split("-")[0].strip())
-                explanations['neuroticism'] = line.split("-")[1].strip()
-            elif line.startswith("OVERALL PERSONALITY TYPE:"):
-                overall_summary = line.split(":")[1].strip()
+            
+            # Look for trait scores
+            for trait in self.personality_traits:
+                trait_upper = trait.upper()
+                if line.startswith(trait_upper + ":"):
+                    try:
+                        # Extract score and explanation
+                        content = line[len(trait_upper + ":"):]
+                        parts = content.split(" - ", 1)
+                        
+                        # Extract score
+                        score_part = parts[0].strip()
+                        score = int(''.join(filter(str.isdigit, score_part)))
+                        scores[trait] = min(max(score, 1), 10)  # Ensure 1-10 range
+                        
+                        # Extract explanation
+                        if len(parts) > 1:
+                            explanations[trait] = parts[1].strip()
+                        else:
+                            explanations[trait] = "Analysis based on text patterns"
+                            
+                    except (ValueError, IndexError):
+                        scores[trait] = 5  # Default middle score
+                        explanations[trait] = "Unable to parse detailed analysis"
+            
+            # Look for overall summary
+            if line.startswith("OVERALL PERSONALITY TYPE:"):
+                overall_summary = line[len("OVERALL PERSONALITY TYPE:"):].strip()
+        
+        # Ensure all traits have scores to prevent KeyErrors
+        for trait in self.personality_traits:
+            if trait not in scores:
+                scores[trait] = 5
+                explanations[trait] = "Default score assigned due to parsing or API error."
         
         return {
             'scores': scores,
@@ -194,16 +236,51 @@ OVERALL PERSONALITY TYPE: [2-3 sentence summary]
         
         integrated_analysis = {
             'personality_scores': {},
-            'overall_summary': llama_scores['overall_summary']
+            'analysis_metadata': {
+                'timestamp': datetime.now().isoformat(),
+                'model_used': self.model_name,
+                'analysis_method': 'hybrid_nlp_llm'
+            },
+            'detailed_analysis': {
+                'llama_raw_response': llama_response,
+                'nlp_features': {
+                    'semantic_similarities': trait_similarities,
+                    'linguistic_patterns': linguistic_patterns
+                }
+            }
         }
         
         # Combine scores from different methods
         for trait in self.personality_traits:
             # Get scores from different methods
+            llama_score = llama_scores['scores'].get(trait, 5)
+            semantic_score = self._convert_similarity_to_score(
+                trait_similarities.get(trait, {}).get('trait_score', 0)
+            )
+            
+            # Calculate weighted combined score
+            combined_score = (0.7 * llama_score + 0.3 * semantic_score)
+            
+            # Calculate confidence based on agreement between methods
+            score_agreement = 1.0 - abs(llama_score - semantic_score) / 10.0
+            base_confidence = trait_similarities.get(trait, {}).get('confidence', 0.5)
+            final_confidence = (score_agreement + base_confidence) / 2
+            
             integrated_analysis['personality_scores'][trait] = {
-                'final_score': (trait_similarities[trait]['trait_score'] + llama_scores['scores'][trait]) / 2,
-                'explanation': llama_scores['explanations'][trait]
+                'final_score': round(combined_score, 2),
+                'llama_score': llama_score,
+                'semantic_score': round(semantic_score, 2),
+                'confidence': round(final_confidence, 3),
+                'explanation': llama_scores['explanations'].get(trait, ''),
+                'level': self._categorize_score(combined_score)
             }
+        
+        # Add overall personality summary
+        integrated_analysis['personality_summary'] = {
+            'dominant_traits': self._identify_dominant_traits(integrated_analysis['personality_scores']),
+            'personality_type': llama_scores.get('overall_summary', ''),
+            'key_characteristics': self._generate_key_characteristics(integrated_analysis['personality_scores'])
+        }
         
         return integrated_analysis
     
@@ -223,3 +300,44 @@ OVERALL PERSONALITY TYPE: [2-3 sentence summary]
             return "Medium"
         else:
             return "High"
+
+    def _identify_dominant_traits(self, personality_scores: Dict) -> List[str]:
+        """Identify the most prominent personality traits"""
+        sorted_traits = sorted(
+            personality_scores.items(),
+            key=lambda x: x[1]['final_score'],
+            reverse=True
+        )
+        
+        # Return top 2-3 traits above average (5.5)
+        dominant = [trait for trait, data in sorted_traits[:3] 
+                   if data['final_score'] > 5.5]
+        
+        return dominant if dominant else [sorted_traits[0][0]]
+    
+    def _generate_key_characteristics(self, personality_scores: Dict) -> List[str]:
+        """Generate key personality characteristics based on scores"""
+        characteristics = []
+        
+        for trait, data in personality_scores.items():
+            score = data['final_score']
+            level = data['level']
+            
+            if level == "High":
+                if trait == "openness":
+                    characteristics.append("Creative and open to new experiences")
+                elif trait == "conscientiousness":
+                    characteristics.append("Organized and goal-oriented")
+                elif trait == "extraversion":
+                    characteristics.append("Outgoing and socially energetic")
+                elif trait == "agreeableness":
+                    characteristics.append("Cooperative and trusting")
+                elif trait == "neuroticism":
+                    characteristics.append("Emotionally sensitive")
+            elif level == "Low":
+                if trait == "neuroticism":
+                    characteristics.append("Emotionally stable and calm")
+                elif trait == "extraversion":
+                    characteristics.append("Independent and reflective")
+        
+        return characteristics[:4]  # Return top 4 characteristics

@@ -29,12 +29,17 @@ class TextPreprocessor:
     
     def _download_nltk_data(self):
         """Download required NLTK data if not present"""
-        required_data = ['punkt', 'wordnet', 'averaged_perceptron_tagger', 'stopwords']
+        # Added 'punkt_tab' as indicated by the error
+        required_data = ['punkt', 'wordnet', 'averaged_perceptron_tagger', 'stopwords', 'punkt_tab']
+        
         for data in required_data:
             try:
+                # A simple way to check if data is present without knowing the exact path
+                nltk.data.find(f'tokenizers/{data}' if data.startswith('punkt') else f'corpora/{data}' if data in ['stopwords', 'wordnet'] else f'taggers/{data}')
+            except LookupError:
+                print(f"NLTK resource '{data}' not found. Downloading...")
                 nltk.download(data)
-            except Exception as e:
-                print(f"Error downloading NLTK data: {e}")
+
     
     def clean_text(self, text: str) -> str:
         """
@@ -137,13 +142,18 @@ class TextPreprocessor:
         lemmatized_words = self.lemmatize_tokens(words)
         
         # Basic statistics
+        cleaned_text = self.clean_text(text)
         stats = {
             'original_length': len(text),
+            'sentence_count': len(sentences),
+            'word_count': len(words),
+            'unique_words': len(set(words)),
             'avg_sentence_length': len(words) / len(sentences) if sentences else 0
         }
         
         return {
             'original_text': text,
+            'cleaned_text': cleaned_text,
             'sentences': sentences,
             'words': words,
             'lemmatized_words': lemmatized_words,

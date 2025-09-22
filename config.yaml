@@ -29,3 +29,6 @@ analysis:
   personality_traits: ["openness", "conscientiousness", "extraversion", "agreeableness", "neuroticism"]
   confidence_threshold: 0.6
   cultural_contexts: ["western", "eastern", "ancient", "medieval", "renaissance", "modern"]
+
+api_keys:
+  gemini: "your-gemini-api-key-here" # This will be overridden by the .env file
