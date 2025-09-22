@@ -337,5 +337,5 @@ Contributions are welcome! Please:
 - **Google** for Gemini API access
 - **Streamlit** for the web framework
 ## outputs
-![output2](/Past-a-live/image1.PNG?raw=true " Data title")
-![output1](/Past-a-live/image2.PNG?raw=true " Data title")
+![Image 1 Description](image1.png)
+![Image 2 Description](image2.png)
