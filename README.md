@@ -1,5 +1,6 @@
 # Past Life Predictor with Advanced NLP Pipeline
-
+![LLAMA Timeout Error](https://raw.githubusercontent.com/Swaraj-Darekar0/Past-a-live/main/image1.PNG)
+![Ollama Server Status](https://raw.githubusercontent.com/Swaraj-Darekar0/Past-a-live/main/image2.PNG)
 ## Project Overview
 The Past Life Predictor is an advanced NLP application that analyzes personality traits from user text responses and generates personalized historical narratives. This project demonstrates a sophisticated multi-stage pipeline combining traditional NLP techniques with modern language models.
 
