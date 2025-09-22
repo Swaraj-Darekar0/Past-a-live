@@ -336,3 +336,6 @@ Contributions are welcome! Please:
 - **Ollama** team for local LLM infrastructure  
 - **Google** for Gemini API access
 - **Streamlit** for the web framework
+## outputs
+![output2](/repository/image1.png?raw=true " Data title")
+![output1](/repository/image2.png?raw=true " Data title")
